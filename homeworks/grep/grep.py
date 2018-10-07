@@ -1,6 +1,7 @@
 
 import argparse
 import sys
+import re
 
 
 def output(line):
@@ -8,9 +9,29 @@ def output(line):
 
 
 def grep(lines, params):
+    #after_context=0, before_context=0, context=0, count=False, ignore_case=True, invert=False, line_number=False, pattern='e'
+    print(str(params.pattern))
+
+    trans_table={ord('*'): '.*', 
+    ord('?'): '.?', 
+    ord('.'): '\.', 
+    ord('^'): '\^', 
+    ord('\\'): r'\\', 
+    ord('$'): '\$', 
+    ord('+'): '\+',
+    ord('('): '\(', 
+    ord('{'): '\[', 
+    ord('['): '\{', 
+    ord('|'): '\|', } #translation table
+
+
+    re_pattern=params.pattern.translate(trans_table) # translating grep pattern to python regex pattern
+    print(re_pattern)
+    pattern=re.compile(re_pattern, re.I)
+    
     for line in lines:
         line = line.rstrip()
-        if params.pattern in line:
+        if re.search(pattern, line):
             output(line)
 
 

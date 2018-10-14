@@ -4,35 +4,56 @@ import sys
 import re
 
 
-def output(line):
-    print(line)
+def output(queue, need_line_number,  is_searched):      
+    output.last_index = getattr(output, 'last_index', queue[0][0])
+    if queue[0][0] - output.last_index > 1:
+        print('--')
 
+    for index, line in queue:
+        if is_searched:
+            print(f'{index}:{line}' if need_line_number else line)
+        else:
+            print(f'{index}-{line}' if need_line_number else line)
+        output.last_index = index
 
 def grep(lines, params):
     #after_context=0, before_context=0, context=0, count=False, ignore_case=True, invert=False, line_number=False, pattern='e'
-    print(str(params.pattern))
 
-    trans_table={ord('*'): '.*', 
-    ord('?'): '.?', 
-    ord('.'): '\.', 
-    ord('^'): '\^', 
-    ord('\\'): r'\\', 
-    ord('$'): '\$', 
-    ord('+'): '\+',
-    ord('('): '\(', 
-    ord('{'): '\[', 
-    ord('['): '\{', 
-    ord('|'): '\|', } #translation table
+    # translating grep pattern to python regex pattern
+    re_pattern=re.escape(params.pattern)
+    re_pattern=re_pattern.replace(r'\?', '.?').replace(r'\*', '.*') 
+    if params.ignore_case:
+        pattern=re.compile(re_pattern, re.I)
+    else:
+        pattern=re.compile(re_pattern)
+   
+    before = list()
+    after = list()
+    amount_of_lines_after = params.after_context or params.context
+    amount_of_lines_before = params.before_context or params.context
+    after_found_line = False
 
-
-    re_pattern=params.pattern.translate(trans_table) # translating grep pattern to python regex pattern
-    print(re_pattern)
-    pattern=re.compile(re_pattern, re.I)
-    
-    for line in lines:
+    for index, line in enumerate(lines):
         line = line.rstrip()
         if re.search(pattern, line):
-            output(line)
+            if before:
+                output(before, params.line_number,  is_searched = False)
+            output([(index, line)], params.line_number,  is_searched = True)
+            before.clear()
+            after_found_line = True
+        else:
+            if not after_found_line:
+                before.append((index, line))
+                if len(before) > amount_of_lines_before:
+                    before.pop(0)
+            else: 
+                after.append((index, line))
+                if len(after) == amount_of_lines_after:
+                    if after:
+                        output(after, params.line_number,  is_searched = False)
+                    after.clear()
+                    after_found_line = False
+
 
 
 def parse_args(args):
@@ -79,8 +100,13 @@ def parse_args(args):
 
 
 def main():
+    import random
+    lines = [str('line {}'.format(random.randint(1,10))) for i in range(20) ]
+    print('\n'.join(line for line in lines))
+    print('')
     params = parse_args(sys.argv[1:])
-    grep(sys.stdin.readlines(), params)
+    grep(lines, params)
+    # grep(sys.stdin.readlines(), params)
 
 
 if __name__ == '__main__':

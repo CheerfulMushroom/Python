@@ -46,10 +46,9 @@ def parse(
     if stop_at:
         stop_at = datetime.strptime(stop_at, '%d/%b/%Y %H:%M:%S')
 
-    if slow_queries:
-        response_time = dict()
-    else:
-        counter = Counter()
+
+    response_time = dict()
+    counter = Counter()
 
     with open('log.log', 'r') as f:
         for line in f:
@@ -74,15 +73,14 @@ def parse(
                 else:
                     url = m.group('URL')
 
-                if slow_queries:
-                    response_time[url] = response_time.get(url, []) + [int(m.group('response_time'))]
-                else:
-                    counter[url] += 1
+
+                response_time[url] = response_time.get(url, 0) + int(m.group('RESPONSE_TIME'))
+                counter[url] += 1
 
 
 
     if slow_queries:
-        response_time = [int(sum(time)/len(time)) for url, time in response_time.items()]
+        response_time = [int(response_time[url]/counter[url]) for url in response_time]
         return sorted(response_time, reverse = True)[:5]
     else:
         return [i[1] for i in counter.most_common(5)]

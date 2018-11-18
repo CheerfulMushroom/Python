@@ -1,16 +1,15 @@
 from functools import wraps
 
-
 def whenthen(func):
-    setattr(func, 'all_when', list())
-    setattr(func, 'all_then', list())
-    setattr(func, 'when', when)
-    setattr(func, 'then', then)
+    func.all_when = []
+    func.all_then =[]
+    func.when = when
+    func.then = then
 
     @wraps(func)
     def wrapped(*args, **kwargs):
-        all_when = getattr(func, 'all_when')
-        all_then = getattr(func, 'all_then')
+        all_when = func.all_when
+        all_then = func.all_then
         if len(all_when) != len(all_then):
             raise Exception(f"There are no @{func.__qualname__}.then after last @{func.__qualname__}.when")
 
